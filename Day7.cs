@@ -18,8 +18,8 @@ namespace Advent2019
         [Test]
         public async Task Silver()
         {
-            var inputs = Enumerable.Range(0, 5);
-            var tasks = inputs.Permute().AsParallel().Select(async phases =>
+            var inputs = new[] { 0, 1, 2, 3, 4 };
+            var tasks = inputs.Permute().Select(async phases =>
             {
                 int input = 0;
                 for (int i = 0; i < phases.Count(); i++)
@@ -42,18 +42,18 @@ namespace Advent2019
         [Test]
         public async Task Gold()
         {
-            var inputs = Enumerable.Range(5, 5);
-            var tasks = inputs.Permute().AsParallel().Select(async phases =>
+            var inputs = new[] { 5, 6, 7, 8, 9 };
+            var tasks = inputs.Permute().Select(async phases =>
             {
                 var amps = new IntCode[phases.Count()];
                 for (int i = 0; i < amps.Length; i++)
                 {
                     amps[i] = new IntCode(_input);
-                    amps[i].AddInput(phases.ElementAt(i));
                 }
 
                 for (int i = 0; i < amps.Length; i++)
                 {
+                    amps[i].AddInput(phases.ElementAt(i));
                     amps[i].PipeTo = amps[(i + 1) % 5];
                 }
 
@@ -70,7 +70,7 @@ namespace Advent2019
 
         class IntCode
         {
-            const bool _debug = false;
+            bool _debug = false;
 
             readonly int[] _ops;
             readonly BufferBlock<int> _inputs = new BufferBlock<int>();
