@@ -62,7 +62,7 @@ namespace Advent2019
         {
             var treeNodes = new ConcurrentDictionary<string, TreeNode>();
 
-            Parallel.ForEach(FileHelpers.ReadAllLines("Day6.txt"), line =>
+            Parallel.ForEach(FileHelpers.ReadAllLines("Inputs\\Day6.txt"), line =>
             {
                 var tokens = line.Split(")");
 

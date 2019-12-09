@@ -10,11 +10,17 @@ namespace Advent2019
     [TestFixture]
     public class Day4
     {
-        const int _low = 264793;
-        const int _high = 803935;
+        readonly IEnumerable<int> _range;
 
-        readonly IEnumerable<int> _range = Enumerable.Range(_low, _high - _low + 1);
-
+        public Day4()
+        {
+            var input = FileHelpers.GetSingle("Inputs\\Day4.txt");
+            var tokens = input.Split(",");
+            var low = int.Parse(tokens[0]);
+            var high = int.Parse(tokens[1]);
+            _range = Enumerable.Range(low, high - low + 1);
+        }
+        
         [Test]
         public void Silver()
         {

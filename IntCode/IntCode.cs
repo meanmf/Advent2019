@@ -1,4 +1,6 @@
-﻿using System;
+﻿// #define INTCODE_TRACE
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,59 +10,61 @@ namespace Advent2019
 {
     class IntCode
     {
-        readonly bool debugOutput = false;
-        readonly long[] _ops = new long[10000];
         readonly BufferBlock<long> _inputs = new BufferBlock<long>();
         readonly List<long> _outputs = new List<long>();
+        readonly IMemoryManager _mem;
 
         long _relativeBase = 0;
         long _ip = 0;
 
         public IntCode PipeTo { get; set; }
 
-        public IntCode(string input, bool debug = false)
+        public IntCode(string input, IMemoryManager memoryManager = null)
         {
-            debugOutput = debug;
+            _mem = memoryManager ?? new FixedMemoryManager(1000);
 
             var program = input.Split(",").Select(long.Parse).ToArray();
-            Array.Copy(program, 0, _ops, 0, program.Length);
+            for (int i = 0; i < program.Length; i++)
+            {
+                _mem[i] = program[i];
+            }
         }
 
         long GetOpCode()
         {
-            return _ops[_ip] % 100;
+            return _mem[_ip] % 100;
         }
 
         long GetParam(int paramNum)
         {
             var modeBase = (int)(10 * Math.Pow(10, paramNum));
-            var mode = (_ops[_ip] / modeBase) % 10;
+            var mode = (_mem[_ip] / modeBase) % 10;
             if (mode == 0)
             {
-                return _ops[_ip + paramNum];
+                return _mem[_ip + paramNum];
             }
             else if (mode == 1)
             {
                 return _ip + paramNum;
             }
 
-            return _relativeBase + _ops[_ip + paramNum];
+            return _relativeBase + _mem[_ip + paramNum];
         }
 
         string DebugParam(int paramNum)
         {
             var modeBase = (int)(10 * Math.Pow(10, paramNum));
-            var mode = (_ops[_ip] / modeBase) % 10;
+            var mode = (_mem[_ip] / modeBase) % 10;
             if (mode == 0)
             {
-                return $"[{_ops[_ip + paramNum]}:{_ops[_ops[_ip + paramNum]]}]";
+                return $"[{_mem[_ip + paramNum]}:{_mem[_mem[_ip + paramNum]]}]";
             }
             else if (mode == 1)
             {
-                return _ops[_ip + paramNum].ToString();
+                return _mem[_ip + paramNum].ToString();
             }
 
-            return $"R[{_relativeBase} + {_ops[_ip + paramNum]}:{_ops[_relativeBase + _ops[_ip + paramNum]]}]";
+            return $"R[{_relativeBase} + {_mem[_ip + paramNum]}:{_mem[_relativeBase + _mem[_ip + paramNum]]}]";
         }
 
         public void AddInput(long input)
@@ -70,12 +74,12 @@ namespace Advent2019
 
         public void Set(long position, long value)
         {
-            _ops[position] = value;
+            _mem[position] = value;
         }
 
         public long Get(long position)
         {
-            return _ops[position];
+            return _mem[position];
         }
 
         Task<long> GetInputAsync()
@@ -92,13 +96,12 @@ namespace Advent2019
             }
         }
 
+#if (INTCODE_TRACE)
         void Log(string message)
         {
-            if (debugOutput)
-            {
-                Console.WriteLine(message);
-            }
+            Console.WriteLine(message);
         }
+#endif
 
         public async Task<IReadOnlyList<long>> RunAsync()
         {
@@ -109,31 +112,41 @@ namespace Advent2019
                 switch (GetOpCode())
                 {
                     case 1: // Add
+#if (INTCODE_TRACE)
                         Log($"{_ip}: {DebugParam(3)} = {DebugParam(1)} + {DebugParam(2)}");
-                        _ops[GetParam(3)] = _ops[GetParam(1)] + _ops[GetParam(2)];
+#endif
+                        _mem[GetParam(3)] = _mem[GetParam(1)] + _mem[GetParam(2)];
                         _ip += 4;
                         break;
                     case 2: // Mult
+#if (INTCODE_TRACE)
                         Log($"{_ip}: {DebugParam(3)} = {DebugParam(1)} * {DebugParam(2)}");
-                        _ops[GetParam(3)] = _ops[GetParam(1)] * _ops[GetParam(2)];
+#endif
+                        _mem[GetParam(3)] = _mem[GetParam(1)] * _mem[GetParam(2)];
                         _ip += 4;
                         break;
                     case 3: // Input
                         var input = await GetInputAsync();
+#if (INTCODE_TRACE)
                         Log($"{_ip}: {DebugParam(1)} = Input({input})");
-                        _ops[GetParam(1)] = input;
+#endif
+                        _mem[GetParam(1)] = input;
                         _ip += 2;
                         break;
                     case 4: // Output
+#if (INTCODE_TRACE)
                         Log($"{_ip}: Output {DebugParam(1)}");
-                        Output(_ops[GetParam(1)]);
+#endif
+                        Output(_mem[GetParam(1)]);
                         _ip += 2;
                         break;
                     case 5: // Jump if true
+#if (INTCODE_TRACE)
                         Log($"{_ip}: if {DebugParam(1)} != 0 jmp {DebugParam(2)}");
-                        if (_ops[GetParam(1)] != 0)
+#endif
+                        if (_mem[GetParam(1)] != 0)
                         {
-                            _ip = _ops[GetParam(2)];
+                            _ip = _mem[GetParam(2)];
                         }
                         else
                         {
@@ -141,10 +154,12 @@ namespace Advent2019
                         }
                         break;
                     case 6: // Jump if false
+#if (INTCODE_TRACE)
                         Log($"{_ip}: if {DebugParam(1)} == 0 jmp {DebugParam(2)}");
-                        if (_ops[GetParam(1)] == 0)
+#endif
+                        if (_mem[GetParam(1)] == 0)
                         {
-                            _ip = _ops[GetParam(2)];
+                            _ip = _mem[GetParam(2)];
                         }
                         else
                         {
@@ -152,23 +167,31 @@ namespace Advent2019
                         }
                         break;
                     case 7: // Less than
+#if (INTCODE_TRACE)
                         Log($"{_ip}: {DebugParam(3)} = ({DebugParam(1)} < {DebugParam(2)})");
-                        _ops[GetParam(3)] = (_ops[GetParam(1)] < _ops[GetParam(2)] ? 1 : 0);
+#endif
+                        _mem[GetParam(3)] = (_mem[GetParam(1)] < _mem[GetParam(2)] ? 1 : 0);
                         _ip += 4;
                         break;
                     case 8: // Equals
+#if (INTCODE_TRACE)
                         Log($"{_ip}: {DebugParam(3)} = ({DebugParam(1)} == {DebugParam(2)})");
-                        _ops[GetParam(3)] = (_ops[GetParam(1)] == _ops[GetParam(2)] ? 1 : 0);
+#endif
+                        _mem[GetParam(3)] = (_mem[GetParam(1)] == _mem[GetParam(2)] ? 1 : 0);
                         _ip += 4;
                         break;
                     case 9: // Relative Base
                         var param1 = DebugParam(1);
-                        _relativeBase += _ops[GetParam(1)];
+                        _relativeBase += _mem[GetParam(1)];
+#if (INTCODE_TRACE)
                         Log($"{_ip}: RB += {param1} => {_relativeBase}");
+#endif
                         _ip += 2;
                         break;
                     case 99: // End
+#if (INTCODE_TRACE)
                         Log($"{_ip}: End");
+#endif
                         done = true;
                         break;
                     default:

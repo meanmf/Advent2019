@@ -15,5 +15,11 @@ namespace Advent2019
                 yield return inputFile.ReadLine();
             }
         }
+
+        public static string GetSingle(string filename)
+        {
+            using var inputFile = new StreamReader(File.OpenRead(filename));
+            return inputFile.ReadLine();
+        }
     }
 }
