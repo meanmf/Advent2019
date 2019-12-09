@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Advent2019
 {
@@ -14,15 +15,18 @@ namespace Advent2019
         #endregion
 
         [Test]
-        public void Silver()
+        public async Task Silver()
         {
-            var result = Run(12, 2);
+            var intcode = new IntCode(_input);
+            intcode.Set(1, 12);
+            intcode.Set(2, 2);
+            await intcode.RunAsync();
 
-            Assert.AreEqual(5290681, result);
+            Assert.AreEqual(5290681, intcode.Get(0));
         }
 
         [Test]
-        public void Gold()
+        public async Task Gold()
         {
             const int target = 19690720;
 
@@ -30,46 +34,18 @@ namespace Advent2019
             {
                 for (int verb = 0; verb < 100; verb++)
                 {
-                    var result = Run(noun, verb);
-                    if (result == target)
+                    var intcode = new IntCode(_input);
+                    intcode.Set(1, noun);
+                    intcode.Set(2, verb);
+                    await intcode.RunAsync();
+
+                    if (intcode.Get(0) == target)
                     {
                         Assert.AreEqual(5741, 100 * noun + verb);
                         return;
                     }
                 }
             }
-        }
-
-        int Run(int noun, int verb)
-        {
-            var ops = _input.Split(",").Select(int.Parse).ToArray();
-            int ip = 0;
-            bool done = false;
-
-            ops[1] = noun;
-            ops[2] = verb;
-
-            while (!done)
-            {
-                switch (ops[ip])
-                {
-                    case 1: // Add
-                        ops[ops[ip + 3]] = ops[ops[ip + 1]] + ops[ops[ip + 2]];
-                        ip += 4;
-                        break;
-                    case 2: // Mult
-                        ops[ops[ip + 3]] = ops[ops[ip + 1]] * ops[ops[ip + 2]];
-                        ip += 4;
-                        break;
-                    case 99: // End
-                        done = true;
-                        break;
-                    default:
-                        throw new InvalidOperationException($"Invalid opcode @ {ip}: {ops[ip]}");
-                }
-            }
-
-            return ops[0];
         }
     }
 }

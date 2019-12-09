@@ -1,10 +1,7 @@
 ﻿using CH.Combinatorics;
 using NUnit.Framework;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 
 namespace Advent2019
 {
@@ -21,7 +18,7 @@ namespace Advent2019
             var inputs = new[] { 0, 1, 2, 3, 4 };
             var tasks = inputs.Permute().Select(async phases =>
             {
-                int input = 0;
+                long input = 0;
                 for (int i = 0; i < phases.Count(); i++)
                 {
                     var intcode = new IntCode(_input);
@@ -66,172 +63,6 @@ namespace Advent2019
 
             var results = await Task.WhenAll(tasks);
             Assert.AreEqual(57660948, results.Max());
-        }
-
-        class IntCode
-        {
-            bool _debug = false;
-
-            readonly int[] _ops;
-            readonly BufferBlock<int> _inputs = new BufferBlock<int>();
-
-            readonly List<int> _outputs = new List<int>();
-            public IntCode PipeTo { get; set; }
-
-            public IntCode(string program)
-            {
-                _ops = program.Split(",").Select(int.Parse).ToArray();
-            }
-
-            int GetOpCode(int position)
-            {
-                return _ops[position] % 100;
-            }
-
-            int GetParam1(int position)
-            {
-                var mode = (_ops[position] / 100) % 10;
-                if (mode == 0)
-                {
-                    return _ops[_ops[position + 1]];
-                }
-
-                return _ops[position + 1];
-            }
-
-            string DebugParam1(int position)
-            {
-                var mode = (_ops[position] / 100) % 10;
-                if (mode == 0)
-                {
-                    return $"[{_ops[position + 1]}:{_ops[_ops[position + 1]]}]";
-                }
-
-                return _ops[position + 1].ToString();
-            }
-
-            int GetParam2(int position)
-            {
-                var mode = (_ops[position] / 1000) % 10;
-                if (mode == 0)
-                {
-                    return _ops[_ops[position + 2]];
-                }
-
-                return _ops[position + 2];
-            }
-
-            string DebugParam2(int position)
-            {
-                var mode = (_ops[position] / 1000) % 10;
-                if (mode == 0)
-                {
-                    return $"[{_ops[position + 2]}:{_ops[_ops[position + 2]]}]";
-                }
-
-                return _ops[position + 2].ToString();
-            }
-
-            public void AddInput(int input)
-            {
-                _inputs.Post(input);
-            }
-
-            Task<int> GetInputAsync()
-            {
-                return _inputs.ReceiveAsync();
-            }
-
-            void Output(int value)
-            {
-                _outputs.Add(value);
-                if (PipeTo != null)
-                {
-                    PipeTo.AddInput(value);
-                }
-            }
-
-            void Log(string message)
-            {
-                if (_debug)
-                {
-                    Console.WriteLine(message);
-                }
-            }
-
-            public async Task<IReadOnlyList<int>> RunAsync()
-            {
-                int ip = 0;
-                bool done = false;
-
-                while (!done)
-                {
-                    switch (GetOpCode(ip))
-                    {
-                        case 1: // Add
-                            Log($"{ip}: [{_ops[ip + 3]}] = {DebugParam1(ip)} + {DebugParam2(ip)}");
-                            _ops[_ops[ip + 3]] = GetParam1(ip) + GetParam2(ip);
-                            ip += 4;
-                            break;
-                        case 2: // Mult
-                            Log($"{ip}: [{_ops[ip + 3]}] = {DebugParam1(ip)} * {DebugParam2(ip)}");
-                            _ops[_ops[ip + 3]] = GetParam1(ip) * GetParam2(ip);
-                            ip += 4;
-                            break;
-                        case 3: // Input
-                            var input = await GetInputAsync();
-                            Log($"{ip}: [{_ops[ip + 1]}] = Input({input})");
-                            _ops[_ops[ip + 1]] = input;
-                            ip += 2;
-                            break;
-                        case 4: // Output
-                            Log($"{ip}: Output {DebugParam1(ip)}");
-                            Output(GetParam1(ip));
-                            ip += 2;
-                            break;
-                        case 5: // Jump if true
-                            Log($"{ip}: if {DebugParam1(ip)} != 0 jmp {DebugParam2(ip)}");
-                            if (GetParam1(ip) != 0)
-                            {
-                                ip = GetParam2(ip);
-                            }
-                            else
-                            {
-                                ip += 3;
-                            }
-                            break;
-                        case 6: // Jump if false
-                            Log($"{ip}: if {DebugParam1(ip)} == 0 jmp {DebugParam2(ip)}");
-                            if (GetParam1(ip) == 0)
-                            {
-                                ip = GetParam2(ip);
-                            }
-                            else
-                            {
-                                ip += 3;
-                            }
-                            break;
-                        case 7: // Less than
-                            Log($"{ip}: [{_ops[ip + 3]}] = ({DebugParam1(ip)} < {DebugParam2(ip)})");
-                            _ops[_ops[ip + 3]] = (GetParam1(ip) < GetParam2(ip) ? 1 : 0);
-                            ip += 4;
-                            break;
-                        case 8: // Equals
-                            Log($"{ip}: [{_ops[ip + 3]}] = ({DebugParam1(ip)} == {DebugParam2(ip)})");
-                            _ops[_ops[ip + 3]] = (GetParam1(ip) == GetParam2(ip) ? 1 : 0);
-                            ip += 4;
-                            break;
-                        case 99: // End
-                            Log($"{ip}: End");
-                            done = true;
-                            break;
-                        default:
-                            throw new InvalidOperationException($"Invalid opcode @ {ip}: {GetOpCode(ip)}");
-                    }
-                }
-
-                return _outputs;
-            }
         }
     }
 }
