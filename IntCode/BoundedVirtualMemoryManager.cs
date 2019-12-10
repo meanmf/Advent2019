@@ -6,8 +6,8 @@ namespace Advent2019
 {
     class BoundedVirtualMemoryManager : IMemoryManager
     {
-        const int _pageBits = 10;
-        const long _pageSize = 2 << _pageBits;
+        const int _pageBits = 16;
+        const long _pageSize = 1 << _pageBits;
         readonly long[][] _pages;
 
         public BoundedVirtualMemoryManager(long capacity)
