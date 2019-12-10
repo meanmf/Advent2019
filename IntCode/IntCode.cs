@@ -1,4 +1,4 @@
-﻿#define INTCODE_TRACE
+﻿// #define INTCODE_TRACE
 
 using System;
 using System.Collections.Generic;
@@ -51,20 +51,37 @@ namespace Advent2019
             return _relativeBase + _mem[_ip + paramNum];
         }
 
-        string DebugParam(int paramNum)
+        string DebugParam(int paramNum, bool showCurrentValue = true)
         {
             var modeBase = (int)(10 * Math.Pow(10, paramNum));
             var mode = (_mem[_ip] / modeBase) % 10;
-            if (mode == 0)
-            {
-                return $"{_mem[_mem[_ip + paramNum]]} @{_mem[_ip + paramNum]}";
-            }
-            else if (mode == 1)
-            {
-                return _mem[_ip + paramNum].ToString();
-            }
 
-            return $"{_mem[_relativeBase + _mem[_ip + paramNum]]} @{_relativeBase + _mem[_ip + paramNum]}";
+            if (showCurrentValue)
+            {
+                if (mode == 0)
+                {
+                    return $"{_mem[_mem[_ip + paramNum]]} @{_mem[_ip + paramNum]}";
+                }
+                else if (mode == 1)
+                {
+                    return _mem[_ip + paramNum].ToString();
+                }
+
+                return $"{_mem[_relativeBase + _mem[_ip + paramNum]]} @{_relativeBase + _mem[_ip + paramNum]}";
+            }
+            else
+            {
+                if (mode == 0)
+                {
+                    return $"@{_mem[_ip + paramNum]}";
+                }
+                else if (mode == 1)
+                {
+                    return "ERR";
+                }
+
+                return $"@{_relativeBase + _mem[_ip + paramNum]}";
+            }
         }
 
         public void AddInput(long input)
@@ -113,14 +130,14 @@ namespace Advent2019
                 {
                     case 1: // Add
 #if (INTCODE_TRACE)
-                        Log($"{DebugParam(3)} = {DebugParam(1)} + {DebugParam(2)}");
+                        Log($"{DebugParam(3, false)} = {DebugParam(1)} + {DebugParam(2)}");
 #endif
                         _mem[GetParam(3)] = _mem[GetParam(1)] + _mem[GetParam(2)];
                         _ip += 4;
                         break;
                     case 2: // Mult
 #if (INTCODE_TRACE)
-                        Log($"{DebugParam(3)} = {DebugParam(1)} * {DebugParam(2)}");
+                        Log($"{DebugParam(3, false)} = {DebugParam(1)} * {DebugParam(2)}");
 #endif
                         _mem[GetParam(3)] = _mem[GetParam(1)] * _mem[GetParam(2)];
                         _ip += 4;
@@ -128,7 +145,7 @@ namespace Advent2019
                     case 3: // Input
                         var input = await GetInputAsync();
 #if (INTCODE_TRACE)
-                        Log($"{DebugParam(1)} = Input({input})");
+                        Log($"{DebugParam(1, false)} = Input({input})");
 #endif
                         _mem[GetParam(1)] = input;
                         _ip += 2;
@@ -168,14 +185,14 @@ namespace Advent2019
                         break;
                     case 7: // Less than
 #if (INTCODE_TRACE)
-                        Log($"{DebugParam(3)} = ({DebugParam(1)} < {DebugParam(2)})");
+                        Log($"{DebugParam(3, false)} = ({DebugParam(1)} < {DebugParam(2)})");
 #endif
                         _mem[GetParam(3)] = (_mem[GetParam(1)] < _mem[GetParam(2)] ? 1 : 0);
                         _ip += 4;
                         break;
                     case 8: // Equals
 #if (INTCODE_TRACE)
-                        Log($"{DebugParam(3)} = ({DebugParam(1)} == {DebugParam(2)})");
+                        Log($"{DebugParam(3, false)} = ({DebugParam(1)} == {DebugParam(2)})");
 #endif
                         _mem[GetParam(3)] = (_mem[GetParam(1)] == _mem[GetParam(2)] ? 1 : 0);
                         _ip += 4;
