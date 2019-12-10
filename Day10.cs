@@ -1,7 +1,6 @@
 ﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -34,6 +33,7 @@ namespace Advent2019
 
             return map;
         }
+
         [Test]
         public void Silver()
         {
@@ -72,7 +72,6 @@ namespace Advent2019
                 Distance = distance;
             }
         }
-
 
         [Test]
         public void Gold()
