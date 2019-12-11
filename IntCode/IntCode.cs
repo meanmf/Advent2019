@@ -18,6 +18,7 @@ namespace Advent2019
         long _ip = 0;
 
         public IntCode PipeTo { get; set; }
+        public BufferBlock<long> OutputBlock { get; } = new BufferBlock<long>();
 
         public IntCode(string input, IMemoryManager memoryManager = null)
         {
@@ -107,6 +108,7 @@ namespace Advent2019
         void Output(long value)
         {
             _outputs.Add(value);
+            OutputBlock.Post(value);
             if (PipeTo != null)
             {
                 PipeTo.AddInput(value);
