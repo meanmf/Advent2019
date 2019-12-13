@@ -217,6 +217,7 @@ namespace Advent2019
                 }
             }
 
+            OutputBlock.Complete();
             return _outputs;
         }
     }

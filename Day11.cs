@@ -59,16 +59,16 @@ namespace Advent2019
 
             var cancel = new CancellationTokenSource();
             var intcode = new IntCode(_input, new FixedMemoryManager(2048));
-            var intcodeTask = intcode.RunAsync().ContinueWith(t => cancel.Cancel());
+            var intcodeTask = intcode.RunAsync();
 
             try
             {
                 _grid[x, y] = _startValue;
-                for (; ; )
+                while (!intcode.OutputBlock.Completion.IsCompleted)
                 {
                     intcode.AddInput(_grid[x, y]);
 
-                    var paint = await intcode.OutputBlock.ReceiveAsync(cancel.Token);
+                    var paint = await intcode.OutputBlock.ReceiveAsync();
                     if (paint == 1)
                     {
                         if (x < _minX) _minX = x;
@@ -110,7 +110,7 @@ namespace Advent2019
                     }
                 }
             }
-            catch (TaskCanceledException)
+            catch (InvalidOperationException)
             {
             }
 

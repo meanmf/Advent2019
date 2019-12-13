@@ -6,6 +6,8 @@
     <IsPackable>false</IsPackable>
 
     <Platforms>AnyCPU;x64</Platforms>
+
+    <StartupObject>Advent2019.Day13</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,6 +33,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Inputs\Day12.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Inputs\Day13.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Inputs\Day2.txt">
