@@ -15,8 +15,9 @@ namespace Advent2019
         [Test]
         public async Task Silver()
         {
-            var intcode = new IntCode(_program);
-            intcode.AddInput(1);
+            var inputProvider = new PipeInputProvider();
+            var intcode = new IntCode(_program, inputProvider: inputProvider);
+            inputProvider.Post(1);
             var outputs = await intcode.RunAsync();
 
             foreach (var output in outputs.SkipLast(1))
@@ -30,8 +31,9 @@ namespace Advent2019
         [Test]
         public async Task Gold()
         {
-            var intcode = new IntCode(_program);
-            intcode.AddInput(5);
+            var inputProvider = new PipeInputProvider();
+            var intcode = new IntCode(_program, inputProvider: inputProvider);
+            inputProvider.Post(5);
             var outputs = await intcode.RunAsync();
 
             Assert.AreEqual(513116, outputs.Single());

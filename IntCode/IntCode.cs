@@ -8,21 +8,42 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Advent2019
 {
-    class IntCode
+    interface IInputProvider
+    {
+        Task<long> ReceiveAsync();
+    }
+
+    public class PipeInputProvider : IInputProvider
     {
         readonly BufferBlock<long> _inputs = new BufferBlock<long>();
+
+        public Task<long> ReceiveAsync()
+        {
+            return _inputs.ReceiveAsync();
+        }
+
+        public void Post(long value)
+        {
+            _inputs.Post(value);
+        }
+    }
+
+    class IntCode
+    {
         readonly List<long> _outputs = new List<long>();
         readonly IMemoryManager _mem;
+        readonly IInputProvider _inputProvider;
 
         long _relativeBase = 0;
         long _ip = 0;
 
-        public IntCode PipeTo { get; set; }
+        public PipeInputProvider PipeTo { get; set; }
         public BufferBlock<long> OutputBlock { get; } = new BufferBlock<long>();
 
-        public IntCode(string input, IMemoryManager memoryManager = null)
+        public IntCode(string input, IMemoryManager memoryManager = null, IInputProvider inputProvider = null)
         {
             _mem = memoryManager ?? new FixedMemoryManager(1000);
+            _inputProvider = inputProvider ?? new PipeInputProvider();
 
             var program = input.Split(",").Select(long.Parse).ToArray();
             for (int i = 0; i < program.Length; i++)
@@ -85,11 +106,6 @@ namespace Advent2019
             }
         }
 
-        public void AddInput(long input)
-        {
-            _inputs.Post(input);
-        }
-
         public void Set(long position, long value)
         {
             _mem[position] = value;
@@ -102,7 +118,7 @@ namespace Advent2019
 
         Task<long> GetInputAsync()
         {
-            return _inputs.ReceiveAsync();
+            return _inputProvider.ReceiveAsync();
         }
 
         void Output(long value)
@@ -111,7 +127,7 @@ namespace Advent2019
             OutputBlock.Post(value);
             if (PipeTo != null)
             {
-                PipeTo.AddInput(value);
+                PipeTo.Post(value);
             }
         }
 

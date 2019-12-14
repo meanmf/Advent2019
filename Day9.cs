@@ -42,20 +42,22 @@ namespace Advent2019
         [Test]
         public void Silver()
         {
-            var comp = new IntCode(_input, new BoundedVirtualMemoryManager(10000));
-            comp.AddInput(1);
+            var inputProvider = new PipeInputProvider();
+            var intcode = new IntCode(_input, new BoundedVirtualMemoryManager(10000), inputProvider);
+            inputProvider.Post(1);
 
-            var output = comp.RunAsync().Result;
+            var output = intcode.RunAsync().Result;
             Assert.AreEqual(3429606717, output.Single());
         }
 
         [Test]
         public void Gold()
         {
-            var comp = new IntCode(_input, new BoundedVirtualMemoryManager(10000));
-            comp.AddInput(2);
+            var inputProvider = new PipeInputProvider();
+            var intcode = new IntCode(_input, new BoundedVirtualMemoryManager(10000), inputProvider);
+            inputProvider.Post(2);
 
-            var output = comp.RunAsync().Result;
+            var output = intcode.RunAsync().Result;
             Assert.AreEqual(33679, output.Single());
         }        
     }

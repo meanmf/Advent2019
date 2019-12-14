@@ -58,7 +58,8 @@ namespace Advent2019
             int direction = 0;
 
             var cancel = new CancellationTokenSource();
-            var intcode = new IntCode(_input, new FixedMemoryManager(2048));
+            var inputProvider = new PipeInputProvider();
+            var intcode = new IntCode(_input, new FixedMemoryManager(2048), inputProvider);
             var intcodeTask = intcode.RunAsync();
 
             try
@@ -66,7 +67,7 @@ namespace Advent2019
                 _grid[x, y] = _startValue;
                 while (!intcode.OutputBlock.Completion.IsCompleted)
                 {
-                    intcode.AddInput(_grid[x, y]);
+                    inputProvider.Post(_grid[x, y]);
 
                     var paint = await intcode.OutputBlock.ReceiveAsync();
                     if (paint == 1)

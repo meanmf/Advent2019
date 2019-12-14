@@ -19,9 +19,10 @@ namespace Advent2019
                 long input = 0;
                 for (int i = 0; i < phases.Count(); i++)
                 {
-                    var intcode = new IntCode(_input);
-                    intcode.AddInput(phases.ElementAt(i));
-                    intcode.AddInput(input);
+                    var inputProvider = new PipeInputProvider();
+                    var intcode = new IntCode(_input, inputProvider: inputProvider);
+                    inputProvider.Post(phases.ElementAt(i));
+                    inputProvider.Post(input);
 
                     var output = await intcode.RunAsync();
                     input = output.Single();
@@ -40,19 +41,21 @@ namespace Advent2019
             var inputs = new[] { 5, 6, 7, 8, 9 };
             var tasks = inputs.Permute().Select(async phases =>
             {
+                var inputProviders = new PipeInputProvider[phases.Count()];
                 var amps = new IntCode[phases.Count()];
                 for (int i = 0; i < amps.Length; i++)
                 {
-                    amps[i] = new IntCode(_input);
+                    inputProviders[i] = new PipeInputProvider();
+                    amps[i] = new IntCode(_input, inputProvider: inputProviders[i]);
                 }
 
                 for (int i = 0; i < amps.Length; i++)
                 {
-                    amps[i].AddInput(phases.ElementAt(i));
-                    amps[i].PipeTo = amps[(i + 1) % 5];
+                    inputProviders[i].Post(phases.ElementAt(i));
+                    amps[i].PipeTo = inputProviders[(i + 1) % 5];
                 }
 
-                amps[0].AddInput(0);
+                inputProviders[0].Post(0);
 
                 var tasks = amps.Select(a => a.RunAsync()).ToArray();
                 var output = await tasks.Last();
