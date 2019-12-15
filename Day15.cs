@@ -11,29 +11,77 @@ namespace Advent2019
     [TestFixture]
     public class Day15
     {
+        static bool _output = false;
+
+        public static Task Main(string[] args)
+        {
+            _output = true;
+            return new Day15().Solve();
+        }
+
         readonly string _input = FileHelpers.GetSingle(@"Inputs\Day15.txt");
+
+        void DumpBoard(int[,] board)
+        {
+            for (int y = 0; y < board.GetLength(1) - 1; y++)
+            {
+                for (int x = 0; x < board.GetLength(0) - 1; x++)
+                {
+                    DumpBoardPosition(board, x, y);
+                }
+            }
+        }
+
+        void DumpBoardPosition(int[,] board, int x, int y)
+        {
+            Console.SetCursorPosition(x, y);
+            switch (board[x, y])
+            {
+                case -4:
+                    Console.Write("O");
+                    break;
+                case -3:
+                    Console.Write("B");
+                    break;
+                case -2:
+                    Console.Write("#");
+                    break;
+                case -1:
+                    Console.Write("?");
+                    break;
+                default:
+                    Console.Write(".");
+                    break;
+            }
+        }
 
         [Test]
         public async Task Solve()
         {
+            if (_output) Console.Clear();
+
             const int size = 42;
             var board = NewBoard(size);
             var mem = new FixedMemoryManager(2048);
 
             var intcode = new IntCode(_input, mem);
             var seeker = new Seeker { X = size / 2, Y = size / 2, Intcode = intcode };
-            board[seeker.X, seeker.Y] = 0;
+            board[seeker.X, seeker.Y] = -3;
+
+            if (_output) DumpBoard(board);
 
             var intcodeTask = intcode.RunAsync();
 
-            var (silverSolution, goldSolution) = await RunAsync(seeker, board);
+            var (silverSolution, goldSolution) = await RunAsync(seeker, board, _output);
             await intcodeTask;
 
             Assert.AreEqual(234, silverSolution);
             Assert.AreEqual(292, goldSolution);
+
+            if (_output) Console.SetCursorPosition(0, size);
         }
 
-        async Task<(int,int)> RunAsync(Seeker rootSeeker, int[,] board)
+        async Task<(int,int)> RunAsync(Seeker rootSeeker, int[,] board, bool output)
         {
             int silverSolution = 0;
             int maxDepth = 0;
@@ -44,6 +92,7 @@ namespace Advent2019
 
             while (seekers.Any())
             {
+                if (output) await Task.Delay(3);
                 var remainingSeekers = new List<Seeker>();
                 foreach (var seeker in seekers)
                 {
@@ -72,6 +121,8 @@ namespace Advent2019
                     if (!seekerReused)
                     {
                         seeker.Intcode.Terminate();
+                        board[seeker.X, seeker.Y] = seeker.Depth;
+                        if (output) DumpBoardPosition(board, seeker.X, seeker.Y);
                     }
                 }
 
@@ -82,29 +133,40 @@ namespace Advent2019
                     seeker.Intcode.InputBlock.Post(seeker.Direction);
                     var response = await seeker.Intcode.OutputBlock.ReceiveAsync();
 
+                    board[seeker.X, seeker.Y] = seeker.Depth;
+                    if (output) DumpBoardPosition(board, seeker.X, seeker.Y);
+
                     if (response == 0)
                     {
                         board[seeker.X + DeltaX(seeker.Direction), seeker.Y + DeltaY(seeker.Direction)] = -2;
                         seeker.Intcode.Terminate();
+                        if (output) DumpBoardPosition(board, seeker.X + DeltaX(seeker.Direction), seeker.Y + DeltaY(seeker.Direction));
                     }
                     else
                     {
                         seeker.Move();
                         maxDepth = Math.Max(maxDepth, seeker.Depth);
-                        board[seeker.X, seeker.Y] = seeker.Depth;
-                        nextSeekers.Add(seeker);
-
-                        if (response == 2)
+                        if (response == 1)
                         {
+                            board[seeker.X, seeker.Y] = -3;
+                            nextSeekers.Add(seeker);
+                        }
+                        else
+                        { 
                             silverSolution = seeker.Depth;
+                            board[seeker.X, seeker.Y] = -4;
+                            if (output) DumpBoardPosition(board, seeker.X, seeker.Y);
+                            seeker.Intcode.Terminate();
 
                             var goldBoard = NewBoard(board.GetLength(0));
                             goldBoard[seeker.X, seeker.Y] = 0;
                             var goldSeeker = seeker.Clone();
                             goldSeeker.Depth = 0;
                             tasks.Add(goldSeeker.Intcode.RunAsync());
-                            goldTask = RunAsync(goldSeeker, goldBoard);
+                            goldTask = RunAsync(goldSeeker, goldBoard, false);
                         }
+
+                        if (output) DumpBoardPosition(board, seeker.X, seeker.Y);
                     }
 
                     seekers = nextSeekers;
