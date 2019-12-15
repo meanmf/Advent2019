@@ -18,6 +18,11 @@ namespace Advent2019
             return (pageNumber, offset);
         }
 
+        public IMemoryManager Fork()
+        {
+            throw new NotImplementedException();
+        }
+
         public long this[long address]
         {
             get

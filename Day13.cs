@@ -47,8 +47,7 @@ namespace Advent2019
             var chars = new[] { ' ', 'X', 'O', '-', '.' };
 
             var mem = new FixedMemoryManager(4096);
-            var inputProvider = new PipeInputProvider();
-            var intcode = new IntCode(_input, mem, inputProvider);
+            var intcode = new IntCode(_input, mem);
             mem[0] = 2;
 
             var intcodeTask = intcode.RunAsync();
@@ -94,7 +93,7 @@ namespace Advent2019
                                 await Task.Delay(_delay);
                             }
 
-                            inputProvider.Post(Math.Sign(ballX - paddleX));
+                            intcode.InputBlock.Post(Math.Sign(ballX - paddleX));
                         }
                     }
                 }

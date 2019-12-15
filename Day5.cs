@@ -1,9 +1,9 @@
 ﻿using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace Advent2019
 {
@@ -15,9 +15,8 @@ namespace Advent2019
         [Test]
         public async Task Silver()
         {
-            var inputProvider = new PipeInputProvider();
-            var intcode = new IntCode(_program, inputProvider: inputProvider);
-            inputProvider.Post(1);
+            var intcode = new IntCode(_program);
+            intcode.InputBlock.Post(1);
             var outputs = await intcode.RunAsync();
 
             foreach (var output in outputs.SkipLast(1))
@@ -31,9 +30,8 @@ namespace Advent2019
         [Test]
         public async Task Gold()
         {
-            var inputProvider = new PipeInputProvider();
-            var intcode = new IntCode(_program, inputProvider: inputProvider);
-            inputProvider.Post(5);
+            var intcode = new IntCode(_program);
+            intcode.InputBlock.Post(5);
             var outputs = await intcode.RunAsync();
 
             Assert.AreEqual(513116, outputs.Single());

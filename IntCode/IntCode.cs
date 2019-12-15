@@ -3,47 +3,49 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace Advent2019
 {
-    interface IInputProvider
-    {
-        Task<long> ReceiveAsync();
-    }
-
-    public class PipeInputProvider : IInputProvider
-    {
-        readonly BufferBlock<long> _inputs = new BufferBlock<long>();
-
-        public Task<long> ReceiveAsync()
-        {
-            return _inputs.ReceiveAsync();
-        }
-
-        public void Post(long value)
-        {
-            _inputs.Post(value);
-        }
-    }
-
     class IntCode
     {
         readonly List<long> _outputs = new List<long>();
         readonly IMemoryManager _mem;
-        readonly IInputProvider _inputProvider;
-
+        readonly CancellationTokenSource _cts = new CancellationTokenSource();
         long _relativeBase = 0;
         long _ip = 0;
 
-        public PipeInputProvider PipeTo { get; set; }
+        public BufferBlock<long> PipeTo { get; set; }
         public BufferBlock<long> OutputBlock { get; } = new BufferBlock<long>();
+        public BufferBlock<long> InputBlock { get; } = new BufferBlock<long>();
 
-        public IntCode(string input, IMemoryManager memoryManager = null, IInputProvider inputProvider = null)
+        public IntCode Fork()
+        {
+            var mem = _mem.Fork();
+            var copy = new IntCode(mem)
+            {
+                _ip = _ip,
+                _relativeBase = _relativeBase
+            };
+
+            return copy;
+        }
+
+        public void Terminate()
+        {
+            _cts.Cancel();
+        }
+
+        IntCode(IMemoryManager memoryManager)
+        {
+            _mem = memoryManager;
+        }
+
+        public IntCode(string input, IMemoryManager memoryManager = null)
         {
             _mem = memoryManager ?? new FixedMemoryManager(1000);
-            _inputProvider = inputProvider ?? new PipeInputProvider();
 
             var program = input.Split(",").Select(long.Parse).ToArray();
             for (int i = 0; i < program.Length; i++)
@@ -118,7 +120,7 @@ namespace Advent2019
 
         Task<long> GetInputAsync()
         {
-            return _inputProvider.ReceiveAsync();
+            return InputBlock.ReceiveAsync(_cts.Token);
         }
 
         void Output(long value)
@@ -142,95 +144,101 @@ namespace Advent2019
         {
             bool done = false;
 
-            while (!done)
+            try
             {
-                switch (GetOpCode())
+                while (!done && !_cts.IsCancellationRequested)
                 {
-                    case 1: // Add
+                    switch (GetOpCode())
+                    {
+                        case 1: // Add
 #if (INTCODE_TRACE)
                         Log($"{DebugParam(3, false)} = {DebugParam(1)} + {DebugParam(2)}");
 #endif
-                        _mem[GetParam(3)] = _mem[GetParam(1)] + _mem[GetParam(2)];
-                        _ip += 4;
-                        break;
-                    case 2: // Mult
+                            _mem[GetParam(3)] = _mem[GetParam(1)] + _mem[GetParam(2)];
+                            _ip += 4;
+                            break;
+                        case 2: // Mult
 #if (INTCODE_TRACE)
                         Log($"{DebugParam(3, false)} = {DebugParam(1)} * {DebugParam(2)}");
 #endif
-                        _mem[GetParam(3)] = _mem[GetParam(1)] * _mem[GetParam(2)];
-                        _ip += 4;
-                        break;
-                    case 3: // Input
-                        var input = await GetInputAsync();
+                            _mem[GetParam(3)] = _mem[GetParam(1)] * _mem[GetParam(2)];
+                            _ip += 4;
+                            break;
+                        case 3: // Input
+                            var input = await GetInputAsync();
 #if (INTCODE_TRACE)
                         Log($"{DebugParam(1, false)} = Input({input})");
 #endif
-                        _mem[GetParam(1)] = input;
-                        _ip += 2;
-                        break;
-                    case 4: // Output
+                            _mem[GetParam(1)] = input;
+                            _ip += 2;
+                            break;
+                        case 4: // Output
 #if (INTCODE_TRACE)
                         Log($"Output {DebugParam(1)}");
 #endif
-                        Output(_mem[GetParam(1)]);
-                        _ip += 2;
-                        break;
-                    case 5: // Jump if true
+                            Output(_mem[GetParam(1)]);
+                            _ip += 2;
+                            break;
+                        case 5: // Jump if true
 #if (INTCODE_TRACE)
                         Log($"if {DebugParam(1)} != 0 jmp {DebugParam(2)}");
 #endif
-                        if (_mem[GetParam(1)] != 0)
-                        {
-                            _ip = _mem[GetParam(2)];
-                        }
-                        else
-                        {
-                            _ip += 3;
-                        }
-                        break;
-                    case 6: // Jump if false
+                            if (_mem[GetParam(1)] != 0)
+                            {
+                                _ip = _mem[GetParam(2)];
+                            }
+                            else
+                            {
+                                _ip += 3;
+                            }
+                            break;
+                        case 6: // Jump if false
 #if (INTCODE_TRACE)
                         Log($"if {DebugParam(1)} == 0 jmp {DebugParam(2)}");
 #endif
-                        if (_mem[GetParam(1)] == 0)
-                        {
-                            _ip = _mem[GetParam(2)];
-                        }
-                        else
-                        {
-                            _ip += 3;
-                        }
-                        break;
-                    case 7: // Less than
+                            if (_mem[GetParam(1)] == 0)
+                            {
+                                _ip = _mem[GetParam(2)];
+                            }
+                            else
+                            {
+                                _ip += 3;
+                            }
+                            break;
+                        case 7: // Less than
 #if (INTCODE_TRACE)
                         Log($"{DebugParam(3, false)} = ({DebugParam(1)} < {DebugParam(2)})");
 #endif
-                        _mem[GetParam(3)] = (_mem[GetParam(1)] < _mem[GetParam(2)] ? 1 : 0);
-                        _ip += 4;
-                        break;
-                    case 8: // Equals
+                            _mem[GetParam(3)] = (_mem[GetParam(1)] < _mem[GetParam(2)] ? 1 : 0);
+                            _ip += 4;
+                            break;
+                        case 8: // Equals
 #if (INTCODE_TRACE)
                         Log($"{DebugParam(3, false)} = ({DebugParam(1)} == {DebugParam(2)})");
 #endif
-                        _mem[GetParam(3)] = (_mem[GetParam(1)] == _mem[GetParam(2)] ? 1 : 0);
-                        _ip += 4;
-                        break;
-                    case 9: // Relative Base
+                            _mem[GetParam(3)] = (_mem[GetParam(1)] == _mem[GetParam(2)] ? 1 : 0);
+                            _ip += 4;
+                            break;
+                        case 9: // Relative Base
 #if (INTCODE_TRACE)
                         Log($"RB += {DebugParam(1)} => {_relativeBase + _mem[GetParam(1)]}");
 #endif
-                        _relativeBase += _mem[GetParam(1)];
-                        _ip += 2;
-                        break;
-                    case 99: // End
+                            _relativeBase += _mem[GetParam(1)];
+                            _ip += 2;
+                            break;
+                        case 99: // End
 #if (INTCODE_TRACE)
                         Log($"End");
 #endif
-                        done = true;
-                        break;
-                    default:
-                        throw new InvalidOperationException($"Invalid opcode @ {_ip}: {GetOpCode()}");
+                            done = true;
+                            break;
+                        default:
+                            throw new InvalidOperationException($"Invalid opcode @ {_ip}: {GetOpCode()}");
+                    }
                 }
+            }
+            catch (TaskCanceledException)
+            {
             }
 
             OutputBlock.Complete();

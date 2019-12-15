@@ -7,5 +7,7 @@ namespace Advent2019
     interface IMemoryManager
     {
         long this[long address] { get; set; }
+
+        IMemoryManager Fork();
     }
 }

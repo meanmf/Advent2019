@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace Advent2019
 {
@@ -19,10 +20,9 @@ namespace Advent2019
                 long input = 0;
                 for (int i = 0; i < phases.Count(); i++)
                 {
-                    var inputProvider = new PipeInputProvider();
-                    var intcode = new IntCode(_input, inputProvider: inputProvider);
-                    inputProvider.Post(phases.ElementAt(i));
-                    inputProvider.Post(input);
+                    var intcode = new IntCode(_input);
+                    intcode.InputBlock.Post(phases.ElementAt(i));
+                    intcode.InputBlock.Post(input);
 
                     var output = await intcode.RunAsync();
                     input = output.Single();
@@ -41,21 +41,19 @@ namespace Advent2019
             var inputs = new[] { 5, 6, 7, 8, 9 };
             var tasks = inputs.Permute().Select(async phases =>
             {
-                var inputProviders = new PipeInputProvider[phases.Count()];
                 var amps = new IntCode[phases.Count()];
                 for (int i = 0; i < amps.Length; i++)
                 {
-                    inputProviders[i] = new PipeInputProvider();
-                    amps[i] = new IntCode(_input, inputProvider: inputProviders[i]);
+                    amps[i] = new IntCode(_input);
                 }
 
                 for (int i = 0; i < amps.Length; i++)
                 {
-                    inputProviders[i].Post(phases.ElementAt(i));
-                    amps[i].PipeTo = inputProviders[(i + 1) % 5];
+                    amps[i].InputBlock.Post(phases.ElementAt(i));
+                    amps[i].PipeTo = amps[(i + 1) % 5].InputBlock;
                 }
 
-                inputProviders[0].Post(0);
+                amps[0].InputBlock.Post(0);
 
                 var tasks = amps.Select(a => a.RunAsync()).ToArray();
                 var output = await tasks.Last();
