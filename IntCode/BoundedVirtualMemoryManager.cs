@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Advent2019
 {
@@ -16,6 +14,15 @@ namespace Advent2019
             _pages = new long[pageCount][];
         }
 
+        BoundedVirtualMemoryManager(BoundedVirtualMemoryManager original)
+        {
+            _pages = new long[original._pages.Length][];
+            for (int i=0;i<_pages.Length; i++)
+            {
+                _pages[i] = (long[])original._pages[i].Clone();
+            }
+        }
+
         (long pageNumber, long offset) GetVirtualAddress(long address)
         {
             var pageNumber = address >> _pageBits;
@@ -26,7 +33,7 @@ namespace Advent2019
 
         public IMemoryManager Fork()
         {
-            throw new NotImplementedException();
+            return new BoundedVirtualMemoryManager(this);
         }
 
         public long this[long address]

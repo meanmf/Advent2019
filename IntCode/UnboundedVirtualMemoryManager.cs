@@ -18,9 +18,21 @@ namespace Advent2019
             return (pageNumber, offset);
         }
 
+        public UnboundedVirtualMemoryManager()
+        {
+        }
+
+        UnboundedVirtualMemoryManager(UnboundedVirtualMemoryManager original)
+        {
+            foreach (var page in original._pages)
+            {
+                _pages.Add(page.Key, (long[])page.Value.Clone());
+            }
+        }
+
         public IMemoryManager Fork()
         {
-            throw new NotImplementedException();
+            return new UnboundedVirtualMemoryManager(this);
         }
 
         public long this[long address]
