@@ -7,7 +7,7 @@
 
     <Platforms>AnyCPU;x64</Platforms>
 
-    <StartupObject>Advent2019.Day15</StartupObject>
+    <StartupObject>Advent2019.Day18</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -48,6 +48,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Inputs\Day17.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Inputs\Day18.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Inputs\Day18b.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Inputs\Day2.txt">
