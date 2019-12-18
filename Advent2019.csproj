@@ -7,7 +7,7 @@
 
     <Platforms>AnyCPU;x64</Platforms>
 
-    <StartupObject>Advent2019.Day18</StartupObject>
+    <StartupObject></StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
