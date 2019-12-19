@@ -51,10 +51,37 @@ namespace Advent2019
                 {
                     if (await GetPosAsync(x, y + shipSize - 1) == 1)
                     {
-                        answer = x * 10000 + y;
+                        answer = x * 10_000 + y;
                     }
 
                     x++;
+                }
+            }
+
+            Assert.AreEqual(6671097, answer);
+        }
+
+        [Test]
+        public async Task Gold_Jared()
+        {
+            const int shipSize = 100;
+
+            int firstCol = 0;
+            int answer = 0;
+            for (int y = 10; answer == 0; y++)
+            {
+                int x = firstCol;
+
+                while (await GetPosAsync(x, y) == 0)
+                {
+                    x++;
+                }
+
+                firstCol = x;
+
+                if (await GetPosAsync(x + (shipSize - 1), y - (shipSize - 1)) == 1)
+                {
+                    answer = x * 10_000 + y - (shipSize - 1);
                 }
             }
 
