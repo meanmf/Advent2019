@@ -1,6 +1,9 @@
 ﻿using NUnit.Framework;
 using System;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace Advent2019
 {
@@ -30,19 +33,11 @@ namespace Advent2019
 
             intcode.Write(program);
 
-            var outputs = await intcode.RunAsync();
-
-            foreach (var c in outputs)
-            {
-                if (c <= 255)
-                {
-                    Console.Write((char)c);
-                }
-                else
-                {
-                    Console.Write(c);
-                }
-            }
+            var consoleWriter = new ConsoleWriter();
+            intcode.OutputBlock.AsObservable().Subscribe(consoleWriter);
+            var output = await intcode.RunAsync();
+            await consoleWriter.Completion.Task;
+            Assert.AreEqual(19355436, output.Last());
         }
 
         [Test]
@@ -62,19 +57,11 @@ namespace Advent2019
 
             intcode.Write(program);
 
-            var outputs = await intcode.RunAsync();
-
-            foreach (var c in outputs)
-            {
-                if (c <= 255)
-                {
-                    Console.Write((char)c);
-                }
-                else
-                {
-                    Console.Write(c);
-                }
-            }
+            var consoleWriter = new ConsoleWriter();
+            intcode.OutputBlock.AsObservable().Subscribe(consoleWriter);
+            var output = await intcode.RunAsync();
+            await consoleWriter.Completion.Task;
+            Assert.AreEqual(1142618405, output.Last());
         }
     }
 }
