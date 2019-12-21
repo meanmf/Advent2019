@@ -54,6 +54,14 @@ namespace Advent2019
             }
         }
 
+        public void Write(string input)
+        {
+            foreach (var c in input)
+            {
+                InputBlock.Post(c);
+            }
+        }
+
         long GetOpCode()
         {
             return _mem[_ip] % 100;
