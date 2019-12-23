@@ -28,7 +28,7 @@ namespace Advent2019
             Assert.AreEqual(22134, answer);
         }
 
-        [Test]
+        [Test, Timeout(10000)]
         public async Task Gold()
         {
             var nat = new GoldNAT();
@@ -83,15 +83,15 @@ namespace Advent2019
 
                     if (target == 255)
                     {
-                        _nat.Set(x, y);
                         Console.WriteLine($"{_id}: NAT->{x},{y}");
+                        _nat.Set(x, y);
                     }
                     else
                     {
+                        Console.WriteLine($"{_id}: @{target} {x},{y}");
                         var targetBot = _bots[target];
                         targetBot.InputBlock.Post(x);
                         targetBot.InputBlock.Post(y);
-                        Console.WriteLine($"{_id}: @{target} {x},{y}");
                     }
                 }
             }
@@ -132,8 +132,8 @@ namespace Advent2019
 
         class GoldNAT : INat
         {
-            long _x;
-            long _y;
+            long _x = int.MinValue;
+            long _y = int.MinValue;
             long _lastY = int.MinValue;
 
             public void Set(long x, long y)
@@ -144,11 +144,11 @@ namespace Advent2019
 
             public async Task<long> RunAsync(IntCode[] bots)
             {
-                await Task.Delay(500);
                 for (; ;)
                 {
-                    if (bots.All(c => c.IsPolling))
+                    if (_x > int.MinValue && _y > int.MinValue && bots.All(c => c.IsPolling))
                     {
+                        Console.WriteLine($"NAT: @0 {_x},{_y}");
                         if (_y == _lastY)
                         {
                             foreach (var bot in bots)
@@ -160,12 +160,10 @@ namespace Advent2019
                         _lastY = _y;
                         bots[0].InputBlock.Post(_x);
                         bots[0].InputBlock.Post(_y);
-                        await Task.Delay(500);
+                        await Task.Delay(100);
                     }
-                    else
-                    {
-                        await Task.Delay(10);
-                    }
+
+                    await Task.Yield();
                 }
             }
         }

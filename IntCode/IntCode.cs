@@ -20,12 +20,13 @@ namespace Advent2019
         long _relativeBase = 0;
         long _ip = 0;
         int _pollCount = 0;
+        bool _isPolling = false;
 
         public BufferBlock<long> PipeTo { get; set; }
         public BufferBlock<long> OutputBlock { get; } = new BufferBlock<long>();
         public BufferBlock<long> InputBlock { get; } = new BufferBlock<long>();
 
-        public bool IsPolling { get; private set; }
+        public bool IsPolling => _isPolling && InputBlock.Count == 0;
 
         public IntCode Fork()
         {
@@ -194,15 +195,20 @@ namespace Advent2019
                             long input;
                             if (_nonBlocking)
                             {
-                                input = TryGetInput(-1);
-                                if (input == -1)
+                                if (++_pollCount >= 10)
                                 {
-                                    if (++_pollCount > 5)
+                                    _isPolling = true;
+                                    _pollCount = 0;
+                                    input = await GetInputAsync();
+                                    _isPolling = false;
+                                }
+                                else
+                                { 
+                                    input = TryGetInput(-1);
+                                    if (input == -1)
                                     {
-                                        IsPolling = true;
+                                        await Task.Yield();
                                     }
-
-                                    await Task.Delay(50);
                                 }
                             }
                             else
@@ -219,7 +225,6 @@ namespace Advent2019
 #if (INTCODE_TRACE)
                         Log($"Output {DebugParam(1)}");
 #endif
-                            IsPolling = false;
                             _pollCount = 0;
                             Output(_mem[GetParam(1)]);
                             _ip += 2;
