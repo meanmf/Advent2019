@@ -7,7 +7,7 @@ namespace Advent2019
 {
     static class FileHelpers
     {
-        public static IEnumerable<string> ReadAllLines(string filename)
+        public static IEnumerable<string> EnumerateLines(string filename)
         {
             using var inputFile = new StreamReader(File.OpenRead(filename));
             while (!inputFile.EndOfStream)

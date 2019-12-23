@@ -13,7 +13,7 @@ namespace Advent2019
         [Test]
         public void Silver()
         {
-            var totalFuel = FileHelpers.ReadAllLines("Inputs\\Day1.txt").Sum(line => CalcFuel(int.Parse(line)));
+            var totalFuel = FileHelpers.EnumerateLines("Inputs\\Day1.txt").Sum(line => CalcFuel(int.Parse(line)));
 
             Assert.AreEqual(3297626, totalFuel);
         }
@@ -21,7 +21,7 @@ namespace Advent2019
         [Test]
         public void Gold()
         {
-            var totalFuel = FileHelpers.ReadAllLines("Inputs\\Day1.txt").Select(int.Parse).Sum(mass =>
+            var totalFuel = FileHelpers.EnumerateLines("Inputs\\Day1.txt").Select(int.Parse).Sum(mass =>
             {
                 int addedMass = 0;
                 for (; ; )

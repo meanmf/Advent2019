@@ -20,14 +20,14 @@ namespace Advent2019
         [Test]
         public void Silver()
         {
-            var maze = new Maze(FileHelpers.ReadAllLines(@"Inputs\Day18.txt"));
+            var maze = new Maze(FileHelpers.EnumerateLines(@"Inputs\Day18.txt"));
             Assert.AreEqual(5402, maze.Run());
         }
 
         [Test]
         public void Gold()
         {
-            var maze = new Maze(FileHelpers.ReadAllLines(@"Inputs\Day18b.txt"));
+            var maze = new Maze(FileHelpers.EnumerateLines(@"Inputs\Day18b.txt"));
             Assert.AreEqual(2138, maze.Run());
         }
 

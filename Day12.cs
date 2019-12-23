@@ -47,7 +47,7 @@ namespace Advent2019
         public PlanetarySystem(string filename)
         {
             var planets = new List<Planet>();
-            foreach (var line in FileHelpers.ReadAllLines(filename))
+            foreach (var line in FileHelpers.EnumerateLines(filename))
             {
                 var tokens = line.Split(new[] { '<', '=', ' ', '>', ',' }, StringSplitOptions.RemoveEmptyEntries);
                 var planet = new Planet(tokens);

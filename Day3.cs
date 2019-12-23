@@ -20,7 +20,7 @@ namespace Advent2019
         [Test]
         public void Silver()
         {
-            var wires = FileHelpers.ReadAllLines("Inputs\\Day3.txt").Select(MakeWire).ToArray();
+            var wires = FileHelpers.EnumerateLines("Inputs\\Day3.txt").Select(MakeWire).ToArray();
 
             var intersections = wires[0].Keys.Intersect(wires[1].Keys);
             var minDistance = intersections.Min(intersection => Math.Abs(intersection.x) + Math.Abs(intersection.y));
@@ -31,7 +31,7 @@ namespace Advent2019
         [Test]
         public void Gold()
         {
-            var wires = FileHelpers.ReadAllLines("Inputs\\Day3.txt").Select(MakeWire).ToArray();
+            var wires = FileHelpers.EnumerateLines("Inputs\\Day3.txt").Select(MakeWire).ToArray();
 
             var intersections = wires[0].Keys.Intersect(wires[1].Keys);
             var minSteps = intersections.Min(intersection => wires[0][intersection] + wires[1][intersection]);

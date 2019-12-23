@@ -10,11 +10,6 @@ namespace Advent2019
     [TestFixture]
     public class Day21
     {
-        public static Task Main()
-        {
-            return new Day21().Gold();
-        }
-
         readonly string _input = FileHelpers.GetSingle(@"Inputs\Day21.txt");
 
         [Test]

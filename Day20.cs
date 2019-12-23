@@ -29,7 +29,7 @@ namespace Advent2019
             int xSize = -1;
 
             int yy = 0;
-            foreach (var line in FileHelpers.ReadAllLines(@"Inputs\Day20.txt"))
+            foreach (var line in FileHelpers.EnumerateLines(@"Inputs\Day20.txt"))
             {
                 int xx = 0;
                 foreach (char c in line)
