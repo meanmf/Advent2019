@@ -14,12 +14,18 @@ namespace Advent2019
         readonly List<long> _outputs = new List<long>();
         readonly IMemoryManager _mem;
         readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        readonly bool _nonBlocking;
+        readonly int _id;
+
         long _relativeBase = 0;
         long _ip = 0;
+        int _pollCount = 0;
 
         public BufferBlock<long> PipeTo { get; set; }
         public BufferBlock<long> OutputBlock { get; } = new BufferBlock<long>();
         public BufferBlock<long> InputBlock { get; } = new BufferBlock<long>();
+
+        public bool IsPolling { get; private set; }
 
         public IntCode Fork()
         {
@@ -43,8 +49,10 @@ namespace Advent2019
             _mem = memoryManager;
         }
 
-        public IntCode(string input, IMemoryManager memoryManager = null)
+        public IntCode(string input, IMemoryManager memoryManager = null, int id = 0, bool nonBlocking = false)
         {
+            _id = id;
+            _nonBlocking = nonBlocking;
             _mem = memoryManager ?? new FixedMemoryManager(1000);
 
             var program = input.Split(",").Select(long.Parse).ToArray();
@@ -131,6 +139,16 @@ namespace Advent2019
             return InputBlock.ReceiveAsync(_cts.Token);
         }
 
+        long TryGetInput(long defaultValue)
+        {
+            if (InputBlock.TryReceive(out long value))
+            {
+                return value;
+            }
+
+            return defaultValue;
+        }
+
         void Output(long value)
         {
             _outputs.Add(value);
@@ -144,7 +162,7 @@ namespace Advent2019
 #if (INTCODE_TRACE)
         void Log(string message)
         {
-            Console.WriteLine($"{_ip}: {message}");
+            Console.WriteLine($"[{_id}] {_ip}: {message}");
         }
 #endif
 
@@ -173,7 +191,24 @@ namespace Advent2019
                             _ip += 4;
                             break;
                         case 3: // Input
-                            var input = await GetInputAsync();
+                            long input;
+                            if (_nonBlocking)
+                            {
+                                input = TryGetInput(-1);
+                                if (input == -1)
+                                {
+                                    if (++_pollCount > 5)
+                                    {
+                                        IsPolling = true;
+                                    }
+
+                                    await Task.Delay(50);
+                                }
+                            }
+                            else
+                            {
+                                input = await GetInputAsync();
+                            }
 #if (INTCODE_TRACE)
                         Log($"{DebugParam(1, false)} = Input({input})");
 #endif
@@ -184,6 +219,8 @@ namespace Advent2019
 #if (INTCODE_TRACE)
                         Log($"Output {DebugParam(1)}");
 #endif
+                            IsPolling = false;
+                            _pollCount = 0;
                             Output(_mem[GetParam(1)]);
                             _ip += 2;
                             break;
